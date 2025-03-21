@@ -1,0 +1,79 @@
+
+
+
+
+
+
+MODULE light(token_value)
+
+VAR
+token : {0,1};
+counter : {1,2,3,4,5,6,7,8,9};
+state : {red, yellow, green};
+
+ASSIGN
+init(token) := token_value;
+init(state) := red;
+init(counter) := 1;
+next(state) := token = 1 ? 
+                            case
+                            counter = 1 : red;
+                            counter = 2 : yellow;
+                            counter = 3 : yellow;
+                            counter = 4 : green;
+                            counter = 5 : green;
+                            counter = 6 : green;
+                            counter = 7 : yellow;
+                            counter = 8 : yellow;
+                            counter = 9 : red;
+                            TRUE : state;
+                            esac
+                        : 
+                        state;
+
+
+next(counter) := token = 1 ?
+                    case
+                    counter = 1 : 2;
+                    counter = 2 : 3;
+                    counter = 3 : 4;
+                    counter = 4 : 5;
+                    counter = 5 : 6;
+                    counter = 6 : 7;
+                    counter = 7 : 8;
+                    counter = 8 : 9;
+                    TRUE : counter;
+                    esac
+                :
+                1 ;
+
+
+
+
+MODULE main
+
+VAR
+
+NSLight : light(1);
+EWLight : light(0);
+
+ASSIGN
+next(NSLight.token) := case
+                    NSLight.token = 1 & NSLight.counter = 9 : 0;
+                    NSLight.token = 0 & EWLight.counter = 9 : 1;
+                    TRUE : NSLight.token;
+                    esac;
+
+next(EWLight.token) := case
+                    EWLight.token = 0 & NSLight.counter = 9 : 1 ;
+                    EWLight.token = 1 & EWLight.counter = 9 : 0;
+                    TRUE : EWLight.token;
+                    esac;
+
+CTLSPEC 
+    AG !(NSLight.token = 1 & EWLight.token=1)
+CTLSPEC 
+    AG !(NSLight.state = green & EWLight.state=green)
+
+CTLSPEC
+    AG ((NSLight.state = green & EWLight.state != green) -> AF ( EWLight.state = green & NSLight.state != green ) )
