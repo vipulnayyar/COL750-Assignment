@@ -71,9 +71,12 @@ next(EWLight.token) := case
                     esac;
 
 CTLSPEC 
-    AG !(NSLight.token = 1 & EWLight.token=1)
+    AG !(NSLight.token = 1 & EWLight.token=1);
 CTLSPEC 
     AG !(NSLight.state = green & EWLight.state=green)
 
 CTLSPEC
     AG ((NSLight.state = green & EWLight.state != green) -> AF ( EWLight.state = green & NSLight.state != green ) )
+
+CTLSPEC
+    AG ((EWLight.state = green & NSLight.state != green) -> AF ( NSLight.state = green & EWLight.state != green ) )
