@@ -1,0 +1,51 @@
+
+
+
+MODULE queue
+
+VAR
+carstate : array 0..9 of {Waiting, Passing, Cleared};
+carstatus : array 0..9 of {ACTIVATED, DEACTIVATED};
+startindex : 0..9;
+endindex : 0..9;
+
+DEFINE 
+windowlength := 5;
+
+ASSIGN
+init(startindex) := 0;
+init(endindex) := 0;
+
+init(carstatus[0]) := DEACTIVATED;
+init(carstatus[1]) := DEACTIVATED;
+init(carstatus[2]) := DEACTIVATED;
+init(carstatus[3]) := DEACTIVATED;
+init(carstatus[4]) := DEACTIVATED;
+init(carstatus[5]) := DEACTIVATED;
+init(carstatus[6]) := DEACTIVATED;
+init(carstatus[7]) := DEACTIVATED;
+init(carstatus[8]) := DEACTIVATED;
+init(carstatus[9]) := DEACTIVATED;
+
+init(carstate[0]) := Waiting;
+init(carstate[1]) := Waiting;
+init(carstate[2]) := Waiting;
+init(carstate[3]) := Waiting;
+init(carstate[4]) := Waiting;
+init(carstate[5]) := Waiting;
+init(carstate[6]) := Waiting;
+init(carstate[7]) := Waiting;
+init(carstate[8]) := Waiting;
+init(carstate[9]) := Waiting;
+
+
+
+next(startindex) := carstate[startindex] = Cleared ? (startindex+1) mod 10 : startindex;
+
+--next(carstate[endindex]) := 
+
+MODULE main
+
+VAR
+
+myqueue : queue();

@@ -1,8 +1,23 @@
 
 
 
+MODULE car
 
+VAR
 
+state : {WAITING, PASSING, CLEARED};
+
+ASSIGN 
+init(state)  := WAITING;
+
+CTLSPEC
+AG (state = WAITING)
+
+MODULE queue()
+
+VAR
+
+car_queue : array 0..9 of car;
 
 MODULE light(token_value)
 
@@ -56,6 +71,13 @@ VAR
 
 NSLight : light(1);
 EWLight : light(0);
+
+NorthToSouthQueue : queue();
+SouthToNorthQueue : queue();
+
+EastToWestQueue : queue();
+WestToEastQueue : queue();
+
 
 ASSIGN
 next(NSLight.token) := case
