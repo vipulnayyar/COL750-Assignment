@@ -34,7 +34,7 @@ class MySolver:
         while True:
             try:
                 line = input()
-                print(line)
+                #print(line)
             except:
                 break
 
@@ -64,72 +64,89 @@ def main():
         row_elements = []
         for j in range(len(array[i])):
 
-
-            if (i == 0 and j == 0) or (i == size - 1 and j == size - 1):
+            row_elements.append(ms.get_address(i,j))
+            if (i == size - 1 and j == size - 1):
                 continue
 
-            row_elements.append(ms.get_address(i,j))
-            print(i,j, ms.get_address(i,j))
-            print(ms.get_index(ms.get_address(i,j)))
-
             if array[i][j] == 'X':
-                print(f"Adding negative clause for {i} , {j} ")
                 ms.add_clause([-1 * ms.get_address(i,j)])
-            #else:
-            #    print(f"Adding positive clause for {i} , {j} ")
-            #    s.add_clause([get_address(i,j, size)])
-
-            nextright = 0
-            nextdown = 0
-
-            if(i == size - 1):
-                if array[i][j+1] == '.' or array[i][j+1] == 'G':
-                    nextright = 1
-                else:
-                    nextright = -1
-
-                ms.add_clause([-1 * ms.get_address(i,j), nextright * ms.get_address(i,j+1)])
+           
             
-            elif(j == size - 1):
+            # Add next node constraints
+            if(i == size - 1):
 
-                if array[i+1][j] == '.' or array[i+1][j] == 'G':
-                    nextdown = 1
-                else:
-                    nextdown = -1
-
-                ms.add_clause([-1 * ms.get_address(i,j), nextdown * ms.get_address(i+1,j)])
+                ms.add_clause([-1 * ms.get_address(i,j),  ms.get_address(i,j+1)])
+            
+            elif(j == size - 1):                
+            
+                ms.add_clause([-1 * ms.get_address(i,j), ms.get_address(i+1,j)])
+            
             else:
-                if array[i][j+1] == '.' or array[i][j+1] == 'G':
-                    nextright = 1
-                else:
-                    nextright = -1
-
-                if array[i+1][j] == '.' or array[i+1][j] == 'G':
-                    nextdown = 1
-                else:
-                    nextdown = -1
-
-                ms.add_clause([-1 * ms.get_address(i,j), nextdown * ms.get_address(i+1,j), nextright * ms.get_address(i,j+1) ])
-        ms.add_clause(row_elements)
+    
+                ms.add_clause([-1 * ms.get_address(i,j), ms.get_address(i+1,j),  ms.get_address(i,j+1) ])
    
-    #for j in range(len(array)):
+    for k in range(len(array)):
+        i = 0
+        j = k
+
+        # Min one constraint
+        min_one_list = []
+        while True:
+
+            if j < 0 or i >= size:
+                break 
+            min_one_list.append(ms.get_address(i,j))
+            i += 1
+            j -= 1
+        
+        if len(min_one_list) >= 1:
+            ms.add_clause(min_one_list)
+
+
+        #Atmost one constraint
+        for i in range(len(min_one_list)):
+            for j in range(i+1, len(min_one_list)):
+                ms.add_clause([-1 * min_one_list[i], -1 * min_one_list[j]])
+
+
+    for k in range(1, len(array)):
+        i = k
+        j = len(array) - 1
+
+        # Min one constraint
+        min_one_list = []
+        while True:
+
+            if j < 0 or i >= size:
+                break 
+
+            min_one_list.append(ms.get_address(i,j))
+            i += 1
+            j -= 1
+        
+        if len(min_one_list) >= 1:
+            ms.add_clause(min_one_list)
+
+        #Atmost one constraint
+        for i in range(len(min_one_list)):
+            for j in range(i+1, len(min_one_list)):
+                ms.add_clause([-1 * min_one_list[i], -1 * min_one_list[j]])
         
                
 
 
-    # Add Slot constraints : Minimum 1
 
     result = ms.s.solve()
     if result:
-        print("SAT")
+        print("*** SAT ***")
         model = ms.s.get_model()
 
         for var in model:
             if var > 0 :
-                print(ms.get_index(var))
+                print(var , ms.get_index(var))
     else:
-        print("UNSAT")
-        print(ms.ss.get_core())
+        print("*** UNSAT ***")
+        print(ms.s.get_core())
 
 if __name__ == '__main__':
     main()
