@@ -1,4 +1,5 @@
 from pysat.solvers import Solver
+from pysat.card import ITotalizer
 from pysat.card import CardEnc , EncType
 import argparse
 
@@ -7,7 +8,7 @@ import argparse
 class MySolver:
 
     def __init__(self, array):
-        self.s = Solver()
+        self.s = Solver(name='glucose3')
         self.size = len(array)
         self.array = array
 
@@ -31,7 +32,7 @@ class MySolver:
 
 
     
-    def get_all_slots(self):
+    def get_all_empty_slots(self):
 
         result = []
         for i in range(len(self.array)):
@@ -40,10 +41,14 @@ class MySolver:
                     result.append(self.get_address(i,j))
         return result
 
-    def solve(self):
+    def solve(self, assumptions = None):
 
         # Solving
-        result = self.s.solve()
+        if assumptions is not None:
+            result = self.s.solve(assumptions = assumptions)
+        else:
+            result = self.s.solve()
+            
         if result:
             print("*** SAT ***")
             model = self.s.get_model()
@@ -156,17 +161,24 @@ def solve_one_shot(array = None, solve=True):
 def solve_incrementally(array=None):
     
     ms = solve_one_shot(array=array, solve=False)
-    for bound in range(2, (2*ms.size) + 1):
-        print("\n\n--- Running with bounded number of steps = " + str(bound) + " ---")
-        #print("Number of lits = " + str(len(ms.get_all_slots())))
-        card_clauses = CardEnc.atmost(lits=ms.get_all_slots(), encoding=EncType.seqcounter, bound=bound+1, top_id = (ms.size*ms.size)).clauses
-        for clause in card_clauses:
+    #print("Number of lits = " + str(len(ms.get_all_empty_slots())))
+    
+    t = ITotalizer(lits=ms.get_all_empty_slots(), ubound=1, top_id = (ms.size*ms.size))
+
+    for clause in t.cnf.clauses:
             ms.add_clause(clause)
 
-        ms.solve()
+   
+    for bound in range(2, (2*ms.size) + 2):
+        print("\n\n--- Running with bounded number of steps = " + str(bound-1) + " ---")
+        
+        t.increase(ubound=bound)        
+        
+        for clause in t.cnf.clauses[-t.nof_new:]:
+            ms.add_clause(clause)
 
-        if bound <  ((2*ms.size) + 1):
-            ms = solve_one_shot(array=array, solve=False)
+        ms.solve(assumptions=[-1 * t.rhs[bound]])
+
 
 
 
