@@ -1,16 +1,19 @@
 from pysat.solvers import Solver
+from pysat.card import CardEnc , EncType
+import argparse
 
 
 
 class MySolver:
 
-    def __init__(self):
+    def __init__(self, array):
         self.s = Solver()
-        self.size = 0
+        self.size = len(array)
+        self.array = array
 
     def add_clause(self, clause):
-        print("Adding Clause")
-        print(clause)
+        #print("Adding Clause")
+        #print(clause)
 
         self.s.add_clause(clause)
 
@@ -27,45 +30,53 @@ class MySolver:
         return int(i),int(j)
 
 
-    def get_input(self):
+    
+    def get_all_slots(self):
 
-        array = []
-        
-        while True:
-            try:
-                line = input()
-                #print(line)
-            except:
-                break
+        result = []
+        for i in range(len(self.array)):
+            for j in range(len(self.array)):
+                if self.array[i][j] != 'X':
+                    result.append(self.get_address(i,j))
+        return result
 
-            if '.' in line or 'X' in line or 'G' in line or 'S' in line:
-                array.append(list(line))
-            else:
-                break
+    def solve(self):
 
-        print(array)
-        self.size = len(array)
-        return array
+        # Solving
+        result = self.s.solve()
+        if result:
+            print("*** SAT ***")
+            model = self.s.get_model()
+
+            print("Points in path obtained is as below : ")
+            print("Row-Column Index  | Encoded Address")
+            for var in model:
+                if var > 0 and var <= (self.size * self.size) :
+                    print( str(self.get_index(var)) + "                   " + str(var) )
+        else:
+            print("*** UNSAT ***")
+            #print(self.s.get_core())
+
+def solve_one_shot(array = None, solve=True):
+    if array is None:
+        print("Error : Array is None")
+        return
+    
+    ms = MySolver(array=array)
 
 
-
-def main():
-
-    ms = MySolver()
-    array = ms.get_input()
-    size = ms.size
-
-
+    # Adding Start and Goal field
     ms.add_clause([ms.get_address(0,0)])
-    ms.add_clause([ms.get_address(size - 1, size - 1)])
+    ms.add_clause([ms.get_address(ms.size - 1, ms.size - 1)])
 
+    # Adding next node constraints
     for i in range(len(array)):
 
         row_elements = []
         for j in range(len(array[i])):
 
             row_elements.append(ms.get_address(i,j))
-            if (i == size - 1 and j == size - 1):
+            if (i == ms.size - 1 and j == ms.size - 1):
                 continue
 
             if array[i][j] == 'X':
@@ -73,27 +84,27 @@ def main():
            
             
             # Add next node constraints
-            if(i == size - 1):
+            if(i == ms.size - 1):
 
                 ms.add_clause([-1 * ms.get_address(i,j),  ms.get_address(i,j+1)])
             
-            elif(j == size - 1):                
+            elif(j == ms.size - 1):                
             
                 ms.add_clause([-1 * ms.get_address(i,j), ms.get_address(i+1,j)])
             
             else:
-    
+
                 ms.add_clause([-1 * ms.get_address(i,j), ms.get_address(i+1,j),  ms.get_address(i,j+1) ])
    
-    for k in range(len(array)):
+    # Adding diagonal part 1 constraints
+    for j in range(1, len(array)):
         i = 0
-        j = k
-
+        
         # Min one constraint
         min_one_list = []
         while True:
 
-            if j < 0 or i >= size:
+            if j < 0 or i >= ms.size:
                 break 
             min_one_list.append(ms.get_address(i,j))
             i += 1
@@ -103,21 +114,22 @@ def main():
             ms.add_clause(min_one_list)
 
 
-        #Atmost one constraint
+        # Atmost one constraint
         for i in range(len(min_one_list)):
             for j in range(i+1, len(min_one_list)):
                 ms.add_clause([-1 * min_one_list[i], -1 * min_one_list[j]])
 
 
-    for k in range(1, len(array)):
-        i = k
+    # Adding diagonal part 2 constraints
+    for i in range(1, len(array)-1):
+        
         j = len(array) - 1
 
         # Min one constraint
         min_one_list = []
         while True:
 
-            if j < 0 or i >= size:
+            if j < 0 or i >= ms.size:
                 break 
 
             min_one_list.append(ms.get_address(i,j))
@@ -133,20 +145,68 @@ def main():
                 ms.add_clause([-1 * min_one_list[i], -1 * min_one_list[j]])
         
                
+    if solve is False:
+        return ms
+    
+    ms.solve()
+
+    
+
+
+def solve_incrementally(array=None):
+    
+    ms = solve_one_shot(array=array, solve=False)
+    for bound in range(2, (2*ms.size) + 1):
+        print("\n\n--- Running with bounded number of steps = " + str(bound) + " ---")
+        #print("Number of lits = " + str(len(ms.get_all_slots())))
+        card_clauses = CardEnc.atmost(lits=ms.get_all_slots(), encoding=EncType.seqcounter, bound=bound+1, top_id = (ms.size*ms.size)).clauses
+        for clause in card_clauses:
+            ms.add_clause(clause)
+
+        ms.solve()
+
+        if bound <  ((2*ms.size) + 1):
+            ms = solve_one_shot(array=array, solve=False)
 
 
 
-    result = ms.s.solve()
-    if result:
-        print("*** SAT ***")
-        model = ms.s.get_model()
 
-        for var in model:
-            if var > 0 :
-                print(var , ms.get_index(var))
+
+def get_input():
+
+    array = []
+        
+    while True:
+        try:
+            line = input()
+            #print(line)
+        except:
+            break
+
+        if '.' in line or 'X' in line or 'G' in line or 'S' in line:
+            array.append(list(line))
+        else:
+            break
+
+    for i in range(len(array)):
+            print(array[i] )
+
+    return array
+
+def main():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--incremental", action="store_true",
+                    help="run incrementally")
+    args = parser.parse_args()
+
+    input_array = get_input()
+
+    if args.incremental:
+        solve_incrementally(array=input_array)
     else:
-        print("*** UNSAT ***")
-        print(ms.s.get_core())
+        solve_one_shot(array=input_array)
 
+    
 if __name__ == '__main__':
     main()
