@@ -48,16 +48,29 @@ class MySolver:
             result = self.s.solve(assumptions = assumptions)
         else:
             result = self.s.solve()
-            
+
         if result:
             print("*** SAT ***")
             model = self.s.get_model()
 
-            print("Points in path obtained is as below : ")
+            node_list = []
+            print("Points in path obtained are as below : ")
             print("Row-Column Index  | Encoded Address")
             for var in model:
                 if var > 0 and var <= (self.size * self.size) :
                     print( str(self.get_index(var)) + "                   " + str(var) )
+                    node_list.append(self.get_index(var))
+
+            print("\nOutput Path(marked by *)\n")
+            for i in range(len(self.array)):
+                for j in range(len(self.array)):
+                    if (i,j) in node_list:
+                        print("*", end='')
+                    else:
+                        print(self.array[i][j], end='')
+                    print("  ", end = '')
+                print("")
+            print("\n")
         else:
             print("*** UNSAT ***")
             #print(self.s.get_core())
@@ -77,10 +90,10 @@ def solve_one_shot(array = None, solve=True):
     # Adding next node constraints
     for i in range(len(array)):
 
-        row_elements = []
+        #row_elements = []
         for j in range(len(array[i])):
 
-            row_elements.append(ms.get_address(i,j))
+            #row_elements.append(ms.get_address(i,j))
             if (i == ms.size - 1 and j == ms.size - 1):
                 continue
 
@@ -100,8 +113,8 @@ def solve_one_shot(array = None, solve=True):
             else:
 
                 ms.add_clause([-1 * ms.get_address(i,j), ms.get_address(i+1,j),  ms.get_address(i,j+1) ])
-   
-    # Adding diagonal part 1 constraints
+    
+     # Adding diagonal part 1 constraints
     for j in range(1, len(array)):
         i = 0
         
@@ -149,7 +162,7 @@ def solve_one_shot(array = None, solve=True):
             for j in range(i+1, len(min_one_list)):
                 ms.add_clause([-1 * min_one_list[i], -1 * min_one_list[j]])
         
-               
+
     if solve is False:
         return ms
     
@@ -170,7 +183,7 @@ def solve_incrementally(array=None):
 
    
     for bound in range(2, (2*ms.size) + 2):
-        print("\n\n--- Running with bounded number of steps = " + str(bound-1) + " ---")
+        print("\n--- Running with at most number of steps = " + str(bound-1) + " ---")
         
         t.increase(ubound=bound)        
         
@@ -200,9 +213,14 @@ def get_input():
         else:
             break
 
+    print("\nInput Array : \n")
     for i in range(len(array)):
-            print(array[i] )
+        for j in range(len(array)):
+            print(array[i][j], end='')
+            print("  ", end = '')
+        print("")
 
+    print("\n\n")
     return array
 
 def main():
