@@ -18,6 +18,7 @@ XX...
 
 ## Q1 : SAT Solution
 $ python3 sat.py -h
+
 usage: sat.py [-h] [-i]
 
 options:
