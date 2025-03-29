@@ -3,10 +3,6 @@ import argparse
 
 
 
-
-
-
-
 def solve_incrementally(array):
 
     pass
