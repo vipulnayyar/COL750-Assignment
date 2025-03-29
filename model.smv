@@ -143,24 +143,41 @@ next(carstate[4]) := carstatus[4] = ACTIVATED ?
                     esac
                     :
                     carstate[4];                                       
-CTLSPEC 
-    AF (carstate[0] = CLEARED);
-CTLSPEC 
-    AF (carstate[1] = CLEARED);
-CTLSPEC 
-    AF (carstate[2] = CLEARED);
-CTLSPEC 
-    AF (carstate[3] = CLEARED);
-CTLSPEC 
-    AF (carstate[4] = CLEARED);
-
 
 CTLSPEC
-    AG ( (carstate[0] = CLEARED) -> AF(carstate[0] = WAITING));
+    AG (
+        AF(carstate[0] = CLEARED & light.state = green)
+        &
+        AF(carstate[0] = WAITING -> AF(carstate[0] = CLEARED & light.state=green) )
+    )
 
 CTLSPEC
-    AF (carstate[0] = WAITING & AF(carstate[0] = PASSING & AF(carstate[0] = CLEARED &  AF (carstate[0] = WAITING & AF(carstate[0] = PASSING & AF(carstate[0] = CLEARED )))  )))
+    AG (
+        AF(carstate[1] = CLEARED & light.state = green)
+        &
+        AF(carstate[1] = WAITING -> AF(carstate[1] = CLEARED & light.state=green) )
+    )
 
+CTLSPEC
+    AG (
+        AF(carstate[2] = CLEARED & light.state = green)
+        &
+        AF(carstate[2] = WAITING -> AF(carstate[2] = CLEARED & light.state=green) )
+    )
+
+CTLSPEC
+    AG (
+        AF(carstate[3] = CLEARED & light.state = green)
+        &
+        AF(carstate[3] = WAITING -> AF(carstate[3] = CLEARED & light.state=green) )
+    )
+
+CTLSPEC
+    AG (
+        AF(carstate[4] = CLEARED & light.state = green)
+        &
+        AF(carstate[4] = WAITING -> AF(carstate[4] = CLEARED & light.state=green) )
+    )
 
 
 MODULE light(token_value)
@@ -254,4 +271,12 @@ CTLSPEC
     AG ((EWLight.state = green & NSLight.state != green) -> AF ( NSLight.state = green & EWLight.state != green ) )
 
 CTLSPEC
-    AG(((NSLight.state = green & EWLight.state != green) -> AF ( EWLight.state = green & NSLight.state != green ) ) & ((EWLight.state = green & NSLight.state != green) -> AF ( NSLight.state = green & EWLight.state != green ) ) )
+    AG(
+        AF(NSLight.state = green & EWLight.state != green)
+        &
+        ((NSLight.state = green & EWLight.state != green) -> AF ( EWLight.state = green & NSLight.state != green ) ) 
+        & 
+        AF(EWLight.state = green & NSLight.state != green)
+        &
+        ((EWLight.state = green & NSLight.state != green) -> AF ( NSLight.state = green & EWLight.state != green ) ) 
+    )
