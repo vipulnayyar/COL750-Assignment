@@ -1,29 +1,170 @@
 
 
 
-MODULE car
+
+MODULE queue(light)
 
 VAR
+carstate : array 0..4 of {WAITING, PASSING, CLEARED};
+carstatus : array 0..4 of {ACTIVATED, DEACTIVATED};
+startindex : 0..5;
+reset : 0..2;
 
-state : {WAITING, PASSING, CLEARED};
+ASSIGN
+init(startindex) := 0;
 
-ASSIGN 
-init(state)  := WAITING;
 
-CTLSPEC
-AG (state = WAITING)
+init(carstatus[0]) := DEACTIVATED;
+init(carstatus[1]) := DEACTIVATED;
+init(carstatus[2]) := DEACTIVATED;
+init(carstatus[3]) := DEACTIVATED;
+init(carstatus[4]) := DEACTIVATED;
 
-MODULE queue()
+init(carstate[0]) := WAITING;
+init(carstate[1]) := WAITING;
+init(carstate[2]) := WAITING;
+init(carstate[3]) := WAITING;
+init(carstate[4]) := WAITING;
 
-VAR
 
-car_queue : array 0..9 of car;
+
+next(startindex) := (startindex >= 0 & startindex <= 4 ) ? 
+                case
+                (carstate[startindex] = CLEARED) : (startindex+1)  ;
+                TRUE : startindex;
+                esac
+                : 
+                reset = 0 ? 0: startindex;
+
+next(reset) := case
+                startindex = 5 : 1;
+                reset = 1 : 2;
+                reset = 2 : 0;
+                TRUE : reset;
+                esac;
+
+
+next(carstatus[0]) := reset = 0 ?
+                        case
+                        startindex = 0 : ACTIVATED;
+                        startindex > 0 : DEACTIVATED; 
+                        TRUE : carstatus[0];
+                        esac
+                        : DEACTIVATED;
+
+next(carstatus[1]) := reset = 0 ?
+                        case
+                        startindex <= 1 : ACTIVATED;
+                        startindex > 1 : DEACTIVATED; 
+                        TRUE : carstatus[1];
+                        esac
+                        : DEACTIVATED;
+
+next(carstatus[2]) := reset = 0 ?
+                        case
+                        startindex <=2 : ACTIVATED;
+                        startindex > 2 : DEACTIVATED; 
+                        TRUE : carstatus[2];
+                        esac
+                        : DEACTIVATED;
+
+next(carstatus[3]) := reset = 0 ?
+                        case
+                        startindex <=3 : ACTIVATED;
+                        startindex > 3 : DEACTIVATED; 
+                        TRUE : carstatus[3];
+                        esac
+                        : DEACTIVATED;
+
+
+next(carstatus[4]) := reset = 0 ?
+                        case
+                        startindex <= 4 : ACTIVATED;
+                        startindex > 4 : DEACTIVATED; 
+                        TRUE : carstatus[4];
+                        esac
+                        : DEACTIVATED;
+
+
+
+
+next(carstate[0]) := carstatus[0] = ACTIVATED ?
+                    case
+                    light.state = red  : WAITING;
+                    light.state = green & carstate[0] = PASSING : CLEARED;
+                    light.state = green : PASSING;
+                    TRUE : carstate[0];
+                    esac
+                    :
+                    carstate[0];
+
+next(carstate[1]) := carstatus[1] = ACTIVATED ?
+                    case
+                    light.state = red  : WAITING;
+                    light.state = green & carstate[1] = PASSING : CLEARED;
+                    light.state = green  & (carstate[0] = CLEARED | carstatus[0] = DEACTIVATED) : PASSING;
+                    
+                    TRUE : carstate[1];
+                    esac
+                    :
+                    carstate[1];
+
+
+next(carstate[2]) := carstatus[2] = ACTIVATED ?
+                    case
+                    light.state = red  : WAITING;
+                    light.state = green & carstate[2] = PASSING : CLEARED;
+                    light.state = green  & (carstate[1] = CLEARED | carstatus[1] = DEACTIVATED) : PASSING;
+                    
+                    TRUE : carstate[2];
+                    esac
+                    :
+                    carstate[2];
+
+
+next(carstate[3]) := carstatus[3] = ACTIVATED ?
+                    case
+                    light.state = red  : WAITING;
+                    light.state = green & carstate[3] = PASSING : CLEARED;
+                    light.state = green  & (carstate[2] = CLEARED | carstatus[2] = DEACTIVATED) : PASSING;
+                    
+                    TRUE : carstate[3];
+                    esac
+                    :
+                    carstate[3];
+
+next(carstate[4]) := carstatus[4] = ACTIVATED ?
+                    case
+                    light.state = red  : WAITING;
+                    light.state = green & carstate[4] = PASSING : CLEARED;
+                    light.state = green  & (carstate[3] = CLEARED | carstatus[3] = DEACTIVATED) : PASSING;
+                    
+                    TRUE : carstate[4];
+                    esac
+                    :
+                    carstate[4];                                       
+CTLSPEC 
+    AF (carstate[0] = CLEARED);
+CTLSPEC 
+    AF (carstate[1] = CLEARED);
+CTLSPEC 
+    AF (carstate[2] = CLEARED);
+CTLSPEC 
+    AF (carstate[3] = CLEARED);
+CTLSPEC 
+    AF (carstate[4] = CLEARED);
+
+
+
+
+
+
 
 MODULE light(token_value)
 
 VAR
 token : {0,1};
-counter : {1,2,3,4,5,6,7,8,9};
+counter : {1,2,3,4,5,6,7,8,9,10,11,12};
 state : {red, yellow, green};
 
 ASSIGN
@@ -38,9 +179,12 @@ next(state) := token = 1 ?
                             counter = 4 : green;
                             counter = 5 : green;
                             counter = 6 : green;
-                            counter = 7 : yellow;
-                            counter = 8 : yellow;
-                            counter = 9 : red;
+                            counter = 7 : green;
+                            counter = 8 : green;
+                            counter = 9 : green;
+                            counter = 10 : yellow;
+                            counter = 11 : yellow;
+                            counter = 12 : red;
                             TRUE : state;
                             esac
                         : 
@@ -57,6 +201,9 @@ next(counter) := token = 1 ?
                     counter = 6 : 7;
                     counter = 7 : 8;
                     counter = 8 : 9;
+                    counter = 9 : 10;
+                    counter = 10 : 11;
+                    counter = 11 : 12;
                     TRUE : counter;
                     esac
                 :
@@ -72,23 +219,23 @@ VAR
 NSLight : light(1);
 EWLight : light(0);
 
-NorthToSouthQueue : queue();
-SouthToNorthQueue : queue();
+NorthToSouthQueue : queue(NSLight);
+--SouthToNorthQueue : queue();
 
-EastToWestQueue : queue();
-WestToEastQueue : queue();
+--EastToWestQueue : queue();
+--WestToEastQueue : queue();
 
 
 ASSIGN
 next(NSLight.token) := case
-                    NSLight.token = 1 & NSLight.counter = 9 : 0;
-                    NSLight.token = 0 & EWLight.counter = 9 : 1;
+                    NSLight.token = 1 & NSLight.counter = 12 : 0;
+                    NSLight.token = 0 & EWLight.counter = 12 : 1;
                     TRUE : NSLight.token;
                     esac;
 
 next(EWLight.token) := case
-                    EWLight.token = 0 & NSLight.counter = 9 : 1 ;
-                    EWLight.token = 1 & EWLight.counter = 9 : 0;
+                    EWLight.token = 0 & NSLight.counter = 12 : 1 ;
+                    EWLight.token = 1 & EWLight.counter = 12 : 0;
                     TRUE : EWLight.token;
                     esac;
 
