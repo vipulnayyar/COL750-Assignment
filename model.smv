@@ -220,10 +220,10 @@ NSLight : light(1);
 EWLight : light(0);
 
 NorthToSouthQueue : queue(NSLight);
---SouthToNorthQueue : queue();
+SouthToNorthQueue : queue(NSLight);
 
---EastToWestQueue : queue();
---WestToEastQueue : queue();
+EastToWestQueue : queue(EWLight);
+WestToEastQueue : queue(EWLight);
 
 
 ASSIGN
