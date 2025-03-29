@@ -3,6 +3,7 @@ Foundations of Automatic Verification Assignment
 
 ## Setup
 ```
+## Create virtualenv environment in ./.venv folder
 $ source .venv/bin/activate
 $ pip3 install -r requirements.txt
 ```
